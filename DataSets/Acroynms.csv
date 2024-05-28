@@ -1,0 +1,43 @@
+﻿Questions ,Acroynms
+Response ID,Response_ID
+2. Are you an undergraduate or postgraduate student?,UG_PGT
+3. Which degree programme are you currently following?,Current_Degree_1
+4. Which degree programme are you currently following,Current_Degree_2
+5. Specify your degree programme.,Degree_Prog_1
+6. Specify your degree programme.,Degree_Prog_2
+7. Year of programme,Year_level
+8. How familiar are you with technology usage in general?,Tech_Familiarity
+9. How familiar are you with Generative AI tools?,GenAI_Familiarity
+10. Why have you chosen not to use Generative AI tools?,GenAI_Not_Used
+11. Are there any specific features or capabilities you would like to see in Generative AI tools that might make you more inclined to use them in the future?,GenAI_Future_Usage
+"12. If you have any additional comments or thoughts about Generative AI tools and their potential use, please share them.",Add_Comments
+13. Which Generative AI tools are you familiar with?,GenAI_Which
+14. In what ways have you used Generative AI tools? (select all that apply),GenAI_What_Ways
+15. Specify in what other ways you have used Generative AI tools.,GenAI_Other_Ways
+16.1. I believe advancements in generative AI tools will significantly enhance my personal and academic growth.,Familiarity_1
+16.2. I prefer traditional search engines over Generative AI tools for information.,Familiarity_2
+16.3. I am confident in my ability to use Generative AI tools effectively.,Familiarity_3
+16.4. Generative AI tools are essential in my self-learning process,Familiarity_4
+16.5. I am not concerned with staying updated on Generative AI advancements.,Familiarity_5
+16.6. Responses from Generative AI tools often lack reliability and contextual appropriateness.,Familiarity_6
+"16.7. Generative AI tools are accessible and user-friendly, regardless of one's economic or technical background.",Familiarity_7
+16.8. I lack understanding of data security and privacy concerns in using Generative AI tools.,Familiarity_8
+17. Do you have any additional comments or opinions about familiarity with Generative AI tools?,Familiarity_open
+18.1. I believe Generative AI tools can help students save time.,Benefit_Challenge_1
+18.2. I don't think Generative AI tools can help me write more efficiently.,Benefit_Challenge_2
+18.3. I think Generative AI tools can provide me with personalized and immediate feedback.,Benefit_Challenge_3
+18.4. Generative AI tools are as effective as human instructors in guiding coursework.,Benefit_Challenge_4
+18.5. Using Generative AI tools boosts my development of transferable skills.,Benefit_Challenge_5
+18.6. My use of Generative AI tools does not significantly involve critical thinking.,Benefit_Challenge_6
+18.7. Generative AI tools provide little assistance in numerical and quantitative subjects.,Benefit_Challenge_7
+18.8. Generative AI tools effectively overcome language barriers in education.,Benefit_Challenge_8
+18.9. Using Generative AI for homework does not diminish the educational value.,Benefit_Challenge_9
+19. Do you have any additional comments or opinions about the benefits and challenges of Generative AI tools?,Benefit_Challenge_open
+20.1. The possible integration of Generative AI tools in higher education will have a negative impact on teaching and learning.,Future_1
+20.2. The use of Generative AI tools in academic settings should be allowed.,Future_2
+20.3. Generative AI tools could potentially substitute for some functions of human teachers and tutors.,Future_3
+20.4. It is unlikely that personal Generative AI assistants will become widespread.,Future_4
+20.5. Proficiency in Generative AI tools will be crucial for competitiveness in future job markets.,Future_5
+"20.6. AI will dramatically influence work, society, and daily life in the next 5 years.",Future_6
+21. Do you have any additional future predictions about Generative AI tools?,Future_open
+Completion Date,Completion
