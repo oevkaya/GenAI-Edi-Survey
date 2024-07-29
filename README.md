@@ -1,4 +1,4 @@
-# GenAI-Edi-Survey
+# Background
 
 GenAI Survey study related files for School of Mathematics at the University of Edinburgh 
 
