@@ -1,7 +1,4 @@
 This folder includes the following files;
 
-- Raw data set without using any acroynm for the column names, named as **ChatGPT_Survey.csv**
-- Changed data set after applying the acroynms created for the column names, named as **ChatGPT_Survey_Items.csv**
-- Separated open-ended type question answers only, after dropping the cases where all missing for three sections (Familiarity, Benefits-Challenges and Future), 
-  named as **ChatGPT_Survey_open_ended_clean.csv**
+- Changed data set after applying the acroynms created for the column names, and cleaning named as **ChatGPT_Survey_New.csv**
 - Created acroynm list for the colum names for the cleaning data process, named as **Acroynms.csv**
