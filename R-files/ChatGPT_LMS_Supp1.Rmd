@@ -1,0 +1,1342 @@
+---
+title: "ChatGPT_Survey Overview"
+author: "TEMSE GenAI group - SoM"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+# All necessary and related packages
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+library(GGally)
+
+library(readr)
+library(tidyverse)
+
+library(tidyr)
+library(RColorBrewer)
+
+```
+
+
+# About Survey Details
+
+The purpose of the survey is to investigate students’ experiences and perceptions of generative AI (**GEN-AI SPEX Survey**!). This survey aims to understand how students like you utilize and perceive Generative AI technologies, including but not limited to tools like ChatGPT.
+
+There are **3 main parts (Familiarity - Benefits and Challenges - Future sections)** of the survey including both **5-scale likert type** of questions and **open ended** ones at the end of each section. 
+
+Some key aspects;
+
+- University online survey system (Jisc) is used for the survey delivery and management. 
+
+- **Students who are taking a course in the School of Mathematics are invited to participate in this study**. 
+
+- The survey was live **during the second half of SEM2** (after flexible learning week) until the end of week 10. 
+
+- **Total number of responses 295** (around 10% of the sample) in 53 running days!
+
+
+## Data Description
+
+```{r}
+ChatGPT_Survey_new <- read_csv("ChatGPT_Survey_New.csv")
+```
+
+
+```{r}
+# For the Pre-Honours and Honours separation based on the year levels
+ChatGPT_Survey_new <- ChatGPT_Survey_new %>%
+  mutate(Honours = case_when(
+    Year_level == 1 ~ "Pre_Hon",
+    Year_level == 2 ~ "Pre_Hon",
+    Year_level == 3 ~ "Hon",
+    Year_level == 4 ~ "Hon",
+    Year_level == 5 ~ "Hon",
+    TRUE ~ NA_character_  # Assigns NA when none of the above conditions are met
+  ))
+```
+
+
+```{r}
+# Calculate the percentages plot
+UG_PGT_level <- ChatGPT_Survey_new %>%
+  group_by(UG_PGT) %>%
+  summarise(Count = n()) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100)) %>% 
+  ggplot(aes(x = UG_PGT, y = Percentage, fill = UG_PGT)) +
+  geom_bar(stat = "identity") +
+  coord_flip() + labs(title = 'Are you an undergraduate or postgraduate student?', 
+                      subtitle = 'Level overview of the participants',
+                      caption = 'Data Source: SoM GenAI Survey') + 
+theme_bw() + 
+theme(legend.position = 'none', axis.title.y=element_blank()) +
+geom_text(aes(label = paste0(round(Percentage, 1), "% ", "(", round(Count, 1), ")")), position = position_stack(vjust = 0.5))+
+scale_x_discrete(breaks = ChatGPT_Survey_new$UG_PGT) # Adjust this based on your preferred breakdown points
+
+UG_PGT_level
+# ggsave("UG_PGT_level.png")
+
+```
+
+```{r}
+Obs_year_level <- ChatGPT_Survey_new %>%
+  # Students who selected PGT with Year_level = 1 is dropped to avoid duplication
+  # filter(!(UG_PGT == "PGT" & Year_level == 1)) %>% 
+  group_by(Year_level) %>%
+  summarise(Count = n()) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 2)) %>% 
+  drop_na(Year_level) %>% 
+  arrange(desc(Percentage)) %>%   # Optional for verifying correct ordering
+
+# Plot
+ggplot(aes(x = reorder(as.factor(Year_level), -Percentage), y = Percentage, fill = as.factor(Year_level))) + 
+  geom_bar(stat = "identity") +
+  coord_flip() + labs(title = 'UG Year level for the participants', 
+                      #subtitle = 'Degree Level overview of the participants',
+                      caption = 'Data Source: SoM GenAI Survey') + 
+  theme_bw() + 
+  theme(legend.position = 'none', axis.title.y=element_blank()) +
+  geom_text(aes(label = paste0(round(Percentage, 1), "% ", "(", round(Count, 1), ")")), position = position_stack(vjust = 0.5)) +
+  scale_x_discrete(breaks = ChatGPT_Survey_new$Year_level) # Adjust this based on your preferred breakdown points
+
+Obs_year_level
+# ggsave("Obs_year_level.png")
+
+```
+
+In terms of Pre-honours and Honours separation, based on year levels (1-2: Pre Honours, 3-4-5: Honours)
+
+```{r}
+# Based on pre-honors and honours separation
+ChatGPT_Survey_new_hon <- ChatGPT_Survey_new %>%
+  group_by(Honours) %>%
+  summarise(Count = n()) %>% 
+  drop_na(Honours) %>% 
+  mutate(Percentage = round(Count / sum(Count) * 100))
+
+ChatGPT_Survey_new_hon %>% 
+  ggplot(aes(x = Honours, y = Percentage, fill = Honours)) +
+  geom_bar(stat = "identity") +
+  coord_flip() + labs(title = 'Are you an pre-honours or honours student?', 
+                      subtitle = 'Level overview of the participants',
+                      caption = 'Data Source: SoM GenAI Survey') + 
+theme_bw() + 
+theme(legend.position = 'none', axis.title.y=element_blank()) +
+geom_text(aes(label = paste0(round(Percentage, 1), "%", "(", round(Count, 1), ")")), position = position_stack(vjust = 0.5))+
+scale_x_discrete(breaks = ChatGPT_Survey_new$Honours) # Adjust this based on your preferred breakdown points
+
+#ggsave("Obs_hon_level.png")
+
+```
+
+
+
+```{r}
+ChatGPT_Current_degree1 <- ChatGPT_Survey_new %>%
+  group_by(Current_Degree_1) %>%
+  summarise(Count = n()) %>%
+  mutate(Percentage = round(Count / sum(Count) * 100, 2)) %>% 
+  drop_na(Current_Degree_1) %>% 
+  arrange(desc(Percentage))  # Optional for verifying correct ordering
+
+# Plot
+ggplot(data = ChatGPT_Current_degree1, aes(x = reorder(Current_Degree_1, -Percentage), y = Percentage, fill = Current_Degree_1)) +
+  geom_bar(stat = "identity") +
+  coord_flip() + labs(title = 'Which degree programme are you currently following (UG)?', 
+                      subtitle = 'Degree Level overview of the participants',
+                      caption = 'Data Source: SoM GenAI Survey') + 
+  theme_bw() + 
+  theme(legend.position = 'none', axis.title.y=element_blank()) +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%", "(", round(Count, 1), ")")), position = position_stack(vjust = 0.5)) +
+  scale_x_discrete(breaks = ChatGPT_Survey_new$Current_Degree_1) # Adjust this based on your preferred breakdown points
+
+
+```
+
+```{r}
+# Since ChatGPT_Survey_new is your data frame
+# 1. Split the 'GenAI_What_Ways' column into individual phrases
+# 2. Count the occurrences of each phrase
+
+phrase_data <- ChatGPT_Survey_new %>%
+  # Separate the phrases into individual rows
+  mutate(GenAI_What_Ways = strsplit(as.character(GenAI_What_Ways), ",\\s*")) %>%
+  unnest(GenAI_What_Ways) %>%
+  # Count each unique phrase
+  group_by(GenAI_What_Ways) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+# Calculate the total count and the percentage for each phrase
+phrase_data <- phrase_data %>%
+  mutate(
+    GenAI_What_Ways = replace_na(as.character(GenAI_What_Ways), "Not selected"),
+    Percentage = (Count / dim(ChatGPT_Survey_new)[1]) * 100
+  )
+
+# phrase_data <- phrase_data %>%
+#  mutate(GenAI_What_Ways = replace_na(as.character(GenAI_What_Ways), "Not selected"))
+
+# View the data to ensure correctness
+# print(phrase_data, n = 11)
+
+```
+
+```{r}
+# Ensure GenAI_What_Ways is a factor and reorder based on Count
+phrase_data <- phrase_data %>%
+  mutate(GenAI_What_Ways = factor(GenAI_What_Ways, levels = GenAI_What_Ways[order(-Count)]))
+
+# View the modified data structure (optional)
+# str(phrase_data)
+
+# Define a color palette
+color_palette <- RColorBrewer::brewer.pal(nlevels(phrase_data$GenAI_What_Ways), "Paired")
+# color_palette
+# Create the bar plot
+plot_GenAI_What_Ways <- ggplot(phrase_data, aes(x = GenAI_What_Ways, y = Count, fill = GenAI_What_Ways)) +
+  geom_col(show.legend = TRUE) +  # geom_col is a shortcut for geom_bar(stat = "identity")
+    geom_text(aes(label = paste0(Count, "\n(", round(Percentage, 1), "%)")), vjust = -0.3, color = "black", size = 3) +  
+  # Add count and percentage labels one under the other+  # Add count and percentage labels above bars
+  scale_fill_manual(values = color_palette, name = "Usage Type", guide = guide_legend(title = "Usage Type")) +
+  labs(title = "Distribution of Ways How GenAI is Used",
+       caption = 'The overall percentages are calculated among all participants.\nNote that these items can be selected more than ones', 
+       x = "",
+       y = "Total numbers") +
+  ylim(c(0,200)) + 
+  theme_minimal() +
+    theme(axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 10),  # Adjust facet strip text
+        legend.position = "right") # Position the legend to the right
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Improve text readability legend.position = "right")  # Position the legend at the bottom
+
+plot_GenAI_What_Ways 
+
+# Just for saving if you need
+# ggsave(filename = "GenAI_What_Ways.png", plot = plot_GenAI_What_Ways, 
+#       width = 10, height = 6, dpi = 300)
+
+
+```
+
+Based on pre-Hon and Hon separation
+
+```{r}
+phrase_data <- ChatGPT_Survey_new %>%
+  # Separate the phrases into individual rows
+  mutate(GenAI_What_Ways = strsplit(as.character(GenAI_What_Ways), ",\\s*")) %>%
+  unnest(GenAI_What_Ways) %>%
+  # Group by both the phrases and Honours status
+  group_by(GenAI_What_Ways, Honours) %>%
+  # Count each unique phrase for each Honours status
+  summarise(Count = n(), .groups = 'drop') %>%
+  # Optionally, if you want to have a more readable output, spread the Honours status into columns
+  pivot_wider(names_from = Honours, values_from = Count, values_fill = list(Count = 0))
+
+
+
+
+# Convert the phrase_data to long format for plotting
+phrase_data_long <- phrase_data %>%
+  pivot_longer(cols = -GenAI_What_Ways, names_to = "Honours", values_to = "Count") %>%
+  filter(!is.na(Count))
+
+# Convert Honours to a factor with the specified order
+phrase_data_long <- phrase_data_long %>%
+  mutate(Honours = factor(Honours, levels = c("Pre_Hon", "Hon", "No Degree Info")))
+
+
+# Print the phrase_data_long to check the structure
+# print(phrase_data_long)
+
+# Define the color palette
+color_palette <- brewer.pal(nlevels(factor(phrase_data_long$GenAI_What_Ways)), "Paired")
+
+# Create the bar plot with faceting
+ggplot(phrase_data_long, aes(x = GenAI_What_Ways, y = Count, fill = GenAI_What_Ways)) +
+  geom_col(show.legend = TRUE) +  # geom_col is a shortcut for geom_bar(stat = "identity")
+  geom_text(aes(label = Count), vjust = -0.3, color = "black", size = 3.5) +  # Add count labels above bars
+  scale_fill_manual(values = color_palette, name = "Usage Type", guide = guide_legend(title = "Usage Type")) +
+  labs(title = "Distribution of Ways How GenAI is Used",
+       x = "",
+       y = "Count") +
+  ylim(c(0, 200)) + 
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 10),  # Adjust facet strip text
+        legend.position = "right") +  # Position the legend to the right
+  facet_wrap(~ Honours, scales = "free_x", ncol = 1)
+
+# For saving the plot 
+# ggsave(filename = "GenAI_What_Ways_PreHon_Hon.png", plot = plot_GenAI_What_Ways, 
+#       width = 10, height = 6, dpi = 300)
+
+```
+
+## Survey Key Insight
+
+- **Almost all of our students** report that they have used genAI to some extent.
+
+- **More than half of our students** have used genAI for:
+  * asking technical questions ();
+  * asking quick questions when stuck on a problem ();
+  * explaining concepts (including generating toy examples) (); 
+  * asking general knowledge questions or advice ().
+  
+- **Less than half of our students** report that they have used genAI for:
+  * checking solutions ();
+  * solving homework ();
+  * writing essays ().
+
+- **Some students** mentioned explicitly that they had used genAI tools for 
+  * coding, 
+  * summarising, 
+  * proofreading, 
+  * producing artwork, or 
+  * simply “messing around with them for fun”.
+  
+
+Below, each item response is visually summarized based on the separation of Pre-Hons vs Hons 
+
+# Familiarity
+
+```{r}
+# Making necessary changes on Familiarity items
+ChatGPT_Survey_new <- ChatGPT_Survey_new %>%
+  mutate(Year_level = as.factor(Year_level)) %>%
+  # Apply the factor conversion across all Benefit_Challenge_i columns
+  mutate(across(starts_with("Familiarity_"), 
+                ~ factor(.x, levels = c("Neither agree nor disagree", 
+                                        "Strongly disagree", "Somewhat disagree",
+                                        "Somewhat agree", "Strongly agree")))) %>%
+  drop_na(Year_level) #After dropping the missing info on year level
+
+```
+
+- *Item 1:* **I believe advancements in generative AI tools will significantly enhance my personal and academic growth.**
+
+```{r}
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_1) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_1) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_1 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_1 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_1 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_1)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+```
+
+
+```{r}
+# Possible to look at across Pre-Hon vs Hon students;
+
+# Creating the heatmap with custom color scale
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_1), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 1", 
+       subtitle = 'I believe advancements in generative AI tools will\nsignificantly enhance my personal and academic growth', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+
+# For saving the plot 
+# ggsave(filename = "Familiarity_Item_1.png", width = 10, height = 6, dpi = 300)
+```
+
+Item 2: I prefer traditional search engines over Generative AI tools for information.
+
+```{r}
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_2) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_2) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_2 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_2 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_2 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_2)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_2), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 2", 
+       subtitle = 'I prefer traditional search engines over Generative AI tools for information.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+- *Item 3:* **I am confident in my ability to use Generative AI tools effectively.**
+
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_3) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_3) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_3 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_3 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_3 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_3)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_3), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 3", 
+       subtitle = 'I am confident in my ability to use Generative AI tools effectively.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+- *Item 4:* **Generative AI tools are essential in my self-learning process.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_4) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_4) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_4 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_4 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_4 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_4)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_4), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 4", 
+       subtitle = 'Generative AI tools are essential in my self-learning process.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+- Item 5: I am not concerned with staying updated on Generative AI advancements.
+
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_5) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_5) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_5 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_5 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_5 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_5)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_5), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 5", 
+       subtitle = 'I am not concerned with staying updated on Generative AI advancements.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 6: Responses from Generative AI tools often lack reliability and contextual appropriateness.
+
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_6) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_6) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_6 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_6 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_6 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_6)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_6), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 6", 
+       subtitle = 'Responses from Generative AI tools often lack reliability and\ncontextual appropriateness.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 7: Generative AI tools are accessible and user-friendly, regardless of one's economic or technical background.
+
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_7) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_7) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_7 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_7 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_7 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_7)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_7), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 7", 
+       subtitle = 'Generative AI tools are accessible and user-friendly,\nregardless of ones economic or technical background.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 8: I lack understanding of data security and privacy concerns in using Generative AI tools.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Familiarity_8) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Familiarity_8) %>%
+  mutate(Familiarity_Grouped = case_when(
+    Familiarity_8 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Familiarity_8 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Familiarity_8 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Familiarity_8)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Familiarity_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+subtitle_text <- 'I lack understanding of data security and privacy\nconcerns in using Generative AI tools.'
+
+ggplot(data_for_plot, aes(x = Honours, y = (Familiarity_8), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Familiarity Item 8", 
+       subtitle = subtitle_text, 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Familiarity_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Familiarity_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+# Benefits and Challenges
+
+Considered items are given below; 
+
+```{r}
+library(dplyr)
+
+# Assuming ChatGPT_Survey_new is your data frame
+ChatGPT_Survey_new <- ChatGPT_Survey_new %>%
+  mutate(Year_level = as.factor(Year_level)) %>%
+  # Apply the factor conversion across all Benefit_Challenge_i columns
+  mutate(across(starts_with("Benefit_Challenge_"), 
+                ~ factor(.x, levels = c("Neither agree nor disagree", 
+                                        "Strongly disagree", "Somewhat disagree",
+                                        "Somewhat agree", "Strongly agree")))) %>%
+  drop_na(Year_level)
+
+```
+
+
+- *Item 1:* **I believe Generative AI tools can help students save time.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_1) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_1) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_1 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_1 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_1 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_1)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_1), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 1", 
+       subtitle = 'I believe Generative AI tools can help students save time.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 2: I don't think Generative AI tools can help me write more efficiently.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_2) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_2) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_2 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_2 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_2 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_2)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_2), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 2", 
+       subtitle = 'I dont think Generative AI tools can help me write more efficiently.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 3: I think Generative AI tools can provide me with personalized and immediate feedback.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_3) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_3) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_3 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_3 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_3 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_3)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_3), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 3", 
+       subtitle = 'I think Generative AI tools can provide me with personalized\nand immediate feedback.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- *Item 4:* **Generative AI tools are as effective as human instructors in guiding coursework.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_4) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_4) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_4 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_4 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_4 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_4)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_4), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 4", 
+       subtitle = 'Generative AI tools are as effective as human instructors in guiding coursework.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 5: Using Generative AI tools boosts my development of transferable skills.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_5) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_5) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_5 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_5 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_5 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_5)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_5), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 5", 
+       subtitle = 'Using Generative AI tools boosts my development of transferable skills.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 6: My use of Generative AI tools does not significantly involve critical thinking.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_6) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_6) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_6 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_6 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_6 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_6)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_6), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 6", 
+       subtitle = 'My use of Generative AI tools does not significantly involve critical thinking.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- *Item 7:* **Generative AI tools provide little assistance in numerical and quantitative subjects.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_7) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_7) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_7 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_7 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_7 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_7)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_7), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 7", 
+       subtitle = 'Generative AI tools provide little assistance in\nnumerical and quantitative subjects.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 8: Generative AI tools effectively overcome language barriers in education.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_8) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_8) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_8 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_8 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_8 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_8)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_8), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 8", 
+       subtitle = 'Generative AI tools effectively overcome language barriers in education.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- *Item 9:* **Using Generative AI for homework does not diminish the educational value.**
+
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Benefit_Challenge_9) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Benefit_Challenge_9) %>%
+  mutate(Benefit_Challenge_Grouped = case_when(
+    Benefit_Challenge_9 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Benefit_Challenge_9 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Benefit_Challenge_9 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Benefit_Challenge_9)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Benefit_Challenge_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Benefit_Challenge_9), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Benefits and Challenges Item 9", 
+       subtitle = 'Using Generative AI for homework does not diminish the educational value.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Benefit_Challenge_Grouped == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Benefit_Challenge_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+# Future
+
+Considered items given below;
+
+```{r}
+# library(dplyr)
+# Assuming ChatGPT_Survey_new is your data frame
+ChatGPT_Survey_new <- ChatGPT_Survey_new %>%
+  mutate(Year_level = as.factor(Year_level)) %>%
+  # Apply the factor conversion across all Benefit_Challenge_i columns
+  mutate(across(starts_with("Future_"), 
+                ~ factor(.x, levels = c("Neither agree nor disagree", 
+                                        "Strongly disagree", "Somewhat disagree",
+                                        "Somewhat agree", "Strongly agree")))) %>%
+  drop_na(Year_level)
+
+```
+
+
+- *Item 1:* **The possible integration of Generative AI tools in higher education will have a negative impact on teaching and learning.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Future_1) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Future_1) %>%
+  mutate(Future_Grouped = case_when(
+    Future_1 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Future_1 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Future_1 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Future_1)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Future_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Future_1), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Future Item 1", 
+       subtitle = 'The possible integration of Generative AI tools in higher education\nwill have a negative impact on teaching and learning.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Future_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- *Item 2:* **The use of Generative AI tools in academic settings should be allowed.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Future_2) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Future_2) %>%
+  mutate(Future_Grouped = case_when(
+    Future_2 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Future_2 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Future_2 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Future_2)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Future_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Future_2), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Future Item 2", 
+       subtitle = 'The use of Generative AI tools in academic settings should be allowed.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Future_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 3: Generative AI tools could potentially substitute for some functions of human teachers and tutors.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Future_3) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Future_3) %>%
+  mutate(Future_Grouped = case_when(
+    Future_3 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Future_3 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Future_3 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Future_3)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Future_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Future_3), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Future Item 3", 
+       subtitle = 'Generative AI tools could potentially substitute for some\nfunctions of human teachers and tutors.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Future_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 4: It is unlikely that personal Generative AI assistants will become widespread.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Future_4) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Future_4) %>%
+  mutate(Future_Grouped = case_when(
+    Future_4 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Future_4 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Future_4 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Future_4)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Future_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Future_4), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Future Item 4", 
+       subtitle = 'It is unlikely that personal Generative AI assistants will become widespread.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Future_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- *Item 5:* **Proficiency in Generative AI tools will be crucial for competitiveness in future job markets.**
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Future_5) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Future_5) %>%
+  mutate(Future_Grouped = case_when(
+    Future_5 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Future_5 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Future_5 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Future_5)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Future_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Future_5), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Future Item 5", 
+       subtitle = 'Proficiency in Generative AI tools will be crucial for competitiveness in\nfuture job markets.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Future_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
+
+- Item 6: AI will dramatically influence work, society, and daily life in the next 5 years.
+
+```{r}
+# Creating a summary table to calculate counts
+data_for_plot <- ChatGPT_Survey_new %>%
+  count(Honours, Future_6) %>%
+  group_by(Honours) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup() %>%
+  drop_na(Future_6) %>%
+  mutate(Future_Grouped = case_when(
+    Future_6 %in% c("Strongly agree", "Somewhat agree") ~ "Agree",
+    Future_6 %in% c("Strongly disagree", "Somewhat disagree") ~ "Disagree",
+    Future_6 %in% c("Neither agree nor disagree") ~ "Neither",
+    TRUE ~ as.character(Future_6)
+  ))
+
+# Summarize the counts for each Honours and Familiarity_Grouped category
+summary_data <- data_for_plot %>%
+  group_by(Honours, Future_Grouped) %>%
+  summarise(Total_Count = sum(n), .groups = 'drop')
+
+# # Creating a summary table to calculate counts
+ggplot(data_for_plot, aes(x = Honours, y = (Future_6), fill = proportion)) +
+  geom_tile() +
+  geom_text(aes(label = paste0("(", n, ")", "\n", scales::percent(proportion, accuracy = 0.1))), color = "black", size = 3) +
+  scale_fill_gradient2(low = "white", mid = "grey", high = "steelblue") +
+  labs(title = "Future Item 6", 
+       subtitle = 'AI will dramatically influence work, society, and daily life in the next 5 years.', 
+       x = "", y = "", fill = "Proportion",
+       caption = paste0("Overall; ", "Agree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Agree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Disagree: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Disagree") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1),
+      ", ", "Neither: %", 
+      round((summary_data %>% filter(Future_Grouped  == "Neither") %>% select(Total_Count) %>% sum()) / sum(summary_data$Total_Count) * 100, 1))) +
+  theme_minimal() +
+  facet_wrap(~Future_Grouped) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), legend.position = 'none')
+```
+
